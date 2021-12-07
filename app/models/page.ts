@@ -10,6 +10,10 @@ export default class Page {
         return this._url;
     }
 
+    public get words(): number[] {
+        return this._words;
+    }
+
     public addWord (word: number): void {
         this._words.push(word);
     }
