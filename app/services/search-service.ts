@@ -83,6 +83,47 @@ export default class SearchService {
         return score;
     }
 
+    private getDocumentLocation(p: Page, queryWord: string, pageDB: PageDB): number {
+        const qws = queryWord.split(" ");
+        let score = 0;
+
+        for (const q of qws) {
+            let found: boolean = false;
+            if (pageDB.includesWord(q)) {
+                const queryIndex = pageDB.getIdForWord(q);
+                for (let i = 0; i < p.words.length; i++) {
+                    const word = p.words[i];
+
+                    if (word === queryIndex) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found) score += 100000;
+        }
+
+        return score;
+    }
+
+    private getWordDistance(p: Page, queryWord: string, pageDB: PageDB): number {
+        const qws: string[] = queryWord.split(" ");
+        let score: number = 0;
+
+        for (let i = 0; i < qws.length -1; i++) {
+            const loc1 = this.getDocumentLocation(p, qws[i], pageDB);
+            const loc2 = this.getDocumentLocation(p, qws[i +1], pageDB);
+            
+            if (loc1 === 100000 || loc2 === 100000) {
+                score += 100000;
+            } else {
+                Math.abs((loc1 - loc2));
+            }
+        }
+
+        return score;
+    }
+
     private async createPageDB(): Promise<PageDB> {
         const filenames = await readFilenamesInDirs([this.GAMES_DIR_PATH, this.PROGRAMMING_DIR_PATH]);
         const pageDB: PageDB = new PageDB();
