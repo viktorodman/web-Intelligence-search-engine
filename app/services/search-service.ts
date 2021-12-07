@@ -10,7 +10,9 @@ export default class SearchService {
     public async searchWord(word: string):Promise<Score[]> {
         const pageDB: PageDB = await this.createPageDB();
 
-        /* const pagesWithWord = pageDB.getPagesWithWord(word); */
+        const pagesWithWord = pageDB.getPagesWithWord(word);
+
+        pageDB.pages = pagesWithWord;
 
         const result: Score[] = this.query(pageDB, word); 
 

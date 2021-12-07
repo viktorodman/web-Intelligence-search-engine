@@ -1,11 +1,14 @@
 import Page from "./page";
 
 export default class PageDB {
-    private _wordTold: Map<string, number> = new Map<string,number>();
+    private _wordTold: Map<string, number> = new Map<string, number>();
     private _pages: Page[] = [];
 
+    public set pages(newPages: Page[]) {
+        this._pages = newPages;
+    }
     
-    public getPagesWithWord(word: string) {
+    public getPagesNamesWithWord(word: string): string[] {
         const pagesWithWord: string[] = [];
         
         if (this._wordTold.has(word)) {
@@ -21,13 +24,27 @@ export default class PageDB {
         return pagesWithWord;
     }
 
+    public getPagesWithWord(word: string): Page[] {
+        const pagesIncludingWord: Page[] = [];
+
+        if (this.includesWord(word)) {
+            const wordIndex = this.getIdForWord(word);
+
+            for (const page of this._pages) {
+                if (page.containsWord(wordIndex)) {
+                    pagesIncludingWord.push(page);
+                }
+            }
+        }
+
+        return pagesIncludingWord
+    }
+
     public includesWord(word: string): boolean {
         return (this._wordTold.has(word)); 
     }
 
     public addPage(page: Page, wordsFromFile: string[]): void {
-        const wordIds: number[] = []
-
         for (const word of wordsFromFile) {
             const wordID = this.getIdForWord(word);
             page.addWord(wordID)
