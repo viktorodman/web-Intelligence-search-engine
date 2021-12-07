@@ -7,9 +7,12 @@ type Data = {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<string[]>) {
+    const  word  = req.query.word as string;
     const searchService: SearchService = new SearchService();
 
-    const data = await searchService.searchWord("hej");
+    console.log(word);
+
+    const data = await searchService.searchWord(word);
 
 
     res.status(200).json(data)

@@ -7,9 +7,17 @@ export default class SearchService {
     private PROGRAMMING_DIR_PATH: string = "data/Words/Programming";
 
     public async searchWord(word: string):Promise<string[]> {
-        const pageDB: PageDB = this.createPageDB();
+        const pageDB: PageDB = await this.createPageDB();
 
-        return []
+        const pagesWithWord = pageDB.getPagesWithWord(word);
+
+        return pagesWithWord;
+    }
+
+    private query(word: string) {
+        const result = []
+        
+
     }
 
     private async createPageDB(): Promise<PageDB> {

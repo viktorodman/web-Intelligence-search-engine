@@ -6,7 +6,19 @@ export default class Page {
         this._url = url
     }
 
+    public get url(): string {
+        return this._url;
+    }
+
     public addWord (word: number): void {
         this._words.push(word);
-    } 
+    }
+    
+    public containsWord(word: number): boolean {
+        for (const wordInList of this._words) {
+            if (wordInList === word) return true;
+        }
+
+        return false;
+    }
 }

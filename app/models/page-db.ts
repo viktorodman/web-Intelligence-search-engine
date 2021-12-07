@@ -4,6 +4,23 @@ export default class PageDB {
     private _wordTold: Map<string, number> = new Map<string,number>();
     private _pages: Page[] = [];
 
+
+    public getPagesWithWord(word: string) {
+        const pagesWithWord: string[] = [];
+        
+        if (this._wordTold.has(word)) {
+            const wordIndex = this.getIdForWord(word);
+
+            for (const page of this._pages) {
+                if (page.containsWord(wordIndex)) {
+                    pagesWithWord.push(page.url);
+                }
+            }
+        }
+
+        return pagesWithWord;
+    }
+
     public addPage(page: Page, wordsFromFile: string[]): void {
         const wordIds: number[] = []
 
@@ -20,7 +37,7 @@ export default class PageDB {
             return this._wordTold.get(word) || -1;
         } else {
             const id = this._wordTold.size;
-            this._wordTold.set(word, id);
+            this._wordTold.set(word.toLowerCase(), id);
             return id;
         }
     }
