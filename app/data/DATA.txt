@@ -1,0 +1,1 @@
+Add Links and Words directories from large wikipedia data set: https://coursepress.lnu.se/courses/web-intelligence/assignments/datasets

@@ -12,6 +12,9 @@
 /.next/
 /out/
 
+/data/Links
+/data/Words
+
 # production
 /build
 
