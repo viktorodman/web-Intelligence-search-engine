@@ -1,32 +1,45 @@
 import Page from "../models/page";
 import PageDB from "../models/page-db";
 import Score from "../models/score";
+import { SearchResult } from "../types/search-result";
 import { readFilenamesInDirs, readWordsFromFile } from "../utils/file-reader";
 
 export default class SearchService {
     private GAMES_DIR_PATH: string = "data/Words/Games";
     private PROGRAMMING_DIR_PATH: string = "data/Words/Programming";
 
-    public async searchWord(word: string):Promise<Score[]> {
+    public async searchWord(searchPhrase: string):Promise<SearchResult> {
         const pageDB: PageDB = await this.createPageDB();
+        const pagesWithWord = pageDB.getPagesWithWord(searchPhrase);
 
-        const pagesWithWord = pageDB.getPagesWithWord(word);
+        console.log(pageDB.getNumberOfWords())
 
         pageDB.pages = pagesWithWord;
 
-        const result: Score[] = this.query(pageDB, word); 
+        const result: Score[] = this.query(pageDB, searchPhrase);
+        
 
-        return result;
+        return this.createResults(result);
     }
 
-    private query(pageDB: PageDB, word: string) {
+    private createResults(scores: Score[]): SearchResult {
+        const searchResults: SearchResult = {
+            numOfResults: scores.length,
+            queryTime: 0,
+            searchScores: scores.map(s => ({score: s.score, contentScore: s.score, link: s.page?.url || "", locationScore: 0, pageRank: 0})).slice(0, 5)
+        }
+
+        return searchResults
+    }
+
+    private query(pageDB: PageDB, searchPhrase: string) {
         const result: Score[] = []
         const scores: Score = new Score();
 
         for (let i = 0; i < pageDB.noPages(); i++) {
             const p: Page = pageDB.getPageAtIndex(i);
-            scores.content[i] = this.getFrequencyScore(p, word, pageDB);
-            scores.location[i] = this.getFrequencyScore(p, word, pageDB);
+            scores.content[i] = this.getFrequencyScore(p, searchPhrase, pageDB);
+            scores.location[i] = this.getWordDistance(p, searchPhrase, pageDB);
         }
 
         this.normalize(scores.content, false);
@@ -34,12 +47,9 @@ export default class SearchService {
 
         for (let i = 0; i < pageDB.noPages(); i++) {
             const p: Page = pageDB.getPageAtIndex(i);
-            
-            for (let j = 0; j < scores.content.length; j++) {                
-                if (scores.content[j] > 0) {
-                    const score = ((1 * scores.content[j]) + (0.5 * scores.location[j]))
-                    result.push(new Score(p, score))
-                }
+            if (scores.content[i] > 0) {
+                const score = ((1 * scores.content[i]) + (0.5 * scores.location[i]))
+                result.push(new Score(p, score))
             }
         }
 
@@ -67,8 +77,8 @@ export default class SearchService {
     }
 
 
-    private getFrequencyScore(p: Page, word: string, pageDB: PageDB): number {
-        const qws: string[] = word.split(" ");
+    private getFrequencyScore(p: Page, searchPhrase: string, pageDB: PageDB): number {
+        const qws: string[] = searchPhrase.split(" ");
         let score: number = 0;
 
         for (const q of qws) {
@@ -131,7 +141,9 @@ export default class SearchService {
         const pageDB: PageDB = new PageDB();
 
         for (const filename of filenames) {
-            const page: Page = new Page(filename);
+            const wordsInPath = filename.split("/");
+            const pageName = wordsInPath[wordsInPath.length -1];
+            const page: Page = new Page(`https://en.wikipedia.org/wiki/${pageName}`);
             const wordsFromFile = await readWordsFromFile(filename);
             pageDB.addPage(page, wordsFromFile)
         }

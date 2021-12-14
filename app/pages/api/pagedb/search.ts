@@ -7,14 +7,15 @@ type Data = {
   name: string
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<any[]>) {
-    const  word  = req.query.word as string;
+export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
+    const  searchPhrase  = req.query.phrase as string;
     const searchService: SearchService = new SearchService();
+    let startTime = process.hrtime();
 
-    
-    const data = await searchService.searchWord(word);
-    
-    const test = data.map(d => d.page?.url);
+    const data = await searchService.searchWord(searchPhrase);
+    const test = process.hrtime(startTime)
 
-    res.status(200).json(test)
+    data.queryTime = Number((test[0] + (test[1] / 1e9)).toFixed(5))
+
+    res.status(200).json(data);
 }

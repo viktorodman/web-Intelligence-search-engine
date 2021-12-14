@@ -67,6 +67,10 @@ export default class PageDB {
         return this._pages.length;
     }
 
+    public getNumberOfWords(): number {
+        return this._wordTold.size
+    }
+
     public getPageAtIndex(index: number): Page {
         if (index >= this._pages.length) {
             throw new Error("Index is out of bound");
