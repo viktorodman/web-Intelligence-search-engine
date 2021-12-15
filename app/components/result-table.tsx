@@ -22,7 +22,11 @@ const ResultTable = ({ searchResult }: ResultTableProps) => {
             {searchResult.searchScores.map((sc, index) => {
               return (
                 <tr key={index}>
-                  <td>{sc.link}</td>
+                  <td>
+                    <a rel="noreferrer noopener" href={sc.link} target="_blank">
+                      {sc.link}
+                    </a>
+                  </td>
                   <td>{sc.score.toFixed(2)}</td>
                   <td>{sc.contentScore.toFixed(2)}</td>
                   <td>{sc.locationScore.toFixed(2)}</td>
