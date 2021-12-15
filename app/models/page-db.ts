@@ -2,13 +2,13 @@ import Page from "./page";
 
 export default class PageDB {
     private _wordTold: Map<string, number> = new Map<string, number>();
-    private _pages: Page[] = [];
+    private _pages: Set<Page> = new Set<Page>();
 
-    public set pages(newPages: Page[]) {
+    public set pages(newPages: Set<Page>) {
         this._pages = newPages;
     }
     
-    public getPagesNamesWithWord(word: string): string[] {
+    /* public getPagesNamesWithWord(word: string): string[] {
         const pagesWithWord: string[] = [];
         
         if (this._wordTold.has(word)) {
@@ -22,20 +22,32 @@ export default class PageDB {
         }
         
         return pagesWithWord;
-    }
+    } */
 
-    public getPagesWithWord(word: string): Page[] {
-        const pagesIncludingWord: Page[] = [];
+    public getPagesWithWord(phrase: string): Set<Page> {
+        const pagesIncludingWord:Set<Page> =  new Set<Page>();
+        const wordsInPhrase: string[] = phrase.split(" "); 
+        let allWordsExists: boolean = true;
 
-        if (this.includesWord(word)) {
-            const wordIndex = this.getIdForWord(word);
-
-            for (const page of this._pages) {
-                if (page.containsWord(wordIndex)) {
-                    pagesIncludingWord.push(page);
-                }
-            }
+        for (const word of wordsInPhrase) {
+            if (!this._wordTold.has(word)) allWordsExists = false;
         }
+
+        
+        if (allWordsExists) {
+            for (let page of this._pages) {
+                let includesAllWords = true;
+                for (const word of wordsInPhrase) {
+                        const wordIndex = this.getIdForWord(word);
+                        if (!page.containsWord(wordIndex)) includesAllWords = false;
+
+                        if (includesAllWords) pagesIncludingWord.add(page); 
+                    }
+                }
+        }
+       
+
+        
 
         return pagesIncludingWord
     }
@@ -50,7 +62,7 @@ export default class PageDB {
             page.addWord(wordID)
         }
 
-        this._pages.push(page);
+        this._pages.add(page);
     }
     
     public getIdForWord(word: string): number {
@@ -64,7 +76,7 @@ export default class PageDB {
     }
 
     public noPages(): number {
-        return this._pages.length;
+        return this._pages.size;
     }
 
     public getNumberOfWords(): number {
@@ -72,10 +84,11 @@ export default class PageDB {
     }
 
     public getPageAtIndex(index: number): Page {
-        if (index >= this._pages.length) {
+        if (index >= this._pages.size) {
             throw new Error("Index is out of bound");
         }
+
         
-        return this._pages[index];
+        return Array.from(this._pages)[index];
     }
 }

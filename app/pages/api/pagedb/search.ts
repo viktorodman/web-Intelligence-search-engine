@@ -9,6 +9,7 @@ type Data = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
     const  searchPhrase  = req.query.phrase as string;
+    console.log(searchPhrase)
     const searchService: SearchService = new SearchService();
     let startTime = process.hrtime();
 

@@ -10,7 +10,7 @@ export default class SearchService {
 
     public async searchWord(searchPhrase: string):Promise<SearchResult> {
         const pageDB: PageDB = await this.createPageDB();
-        const pagesWithWord = pageDB.getPagesWithWord(searchPhrase);
+        const pagesWithWord: Set<Page> = pageDB.getPagesWithWord(searchPhrase);
 
         console.log(pageDB.getNumberOfWords())
 
@@ -48,7 +48,7 @@ export default class SearchService {
         for (let i = 0; i < pageDB.noPages(); i++) {
             const p: Page = pageDB.getPageAtIndex(i);
             if (scores.content[i] > 0) {
-                const score = ((1 * scores.content[i]) + (0.5 * scores.location[i]))
+                const score = ((1 * scores.content[i] + 0.8) + (0.5 * scores.location[i]))
                 result.push(new Score(p, score))
             }
         }
@@ -80,7 +80,8 @@ export default class SearchService {
     private getFrequencyScore(p: Page, searchPhrase: string, pageDB: PageDB): number {
         const qws: string[] = searchPhrase.split(" ");
         let score: number = 0;
-
+        console.log("HERE")
+        console.log(qws)
         for (const q of qws) {
             if (pageDB.includesWord(q)) {
                 const queryIndex = pageDB.getIdForWord(q);
