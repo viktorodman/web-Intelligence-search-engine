@@ -22,12 +22,7 @@ export const createDB = async () => {
         }
     }
     
-    let startTime = process.hrtime();
     calculatePageRank(pageDB);
-
-    const test = process.hrtime(startTime)
-
-    console.log(Number((test[0] + (test[1] / 1e9)).toFixed(5)))
 
     return pageDB;
 }

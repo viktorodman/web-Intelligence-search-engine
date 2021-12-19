@@ -7,7 +7,6 @@ export default class Server {
     private _app: express.Application = express();
     private dbController: DBController = new DBController();
     private _port: string | number;
-    private test = "hello";
     private db: PageDB = new PageDB();
 
     public constructor(port: string | number) {
@@ -15,7 +14,12 @@ export default class Server {
     }
 
     public async run() {
+        console.log("Creating db...")
+
+        let startTime = process.hrtime();
         this.db = await createDB();
+        const endTime = process.hrtime(startTime)
+        console.log("Time creating db: " + Number((endTime[0] + (endTime[1] / 1e9)).toFixed(5)))
 
         this._app.use('/api/db', (req, res) => this.dbController.searchDB(req, res, this.db))
 

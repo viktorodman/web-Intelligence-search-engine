@@ -7,11 +7,6 @@ import { normalize } from "../utils/create-db";
 import { readFilenamesInDirs, readRowsFromFile, readWordsFromFile } from "../utils/file-reader";
 
 export default class SearchService {
-    private DIR_PATH_WORDS: string = "data/Words";
-    private DIR_PATH_LINKS: string = "data/Links";
-    private GAMES_DIR_PATH: string = "data/Words/Games";
-    private PROGRAMMING_DIR_PATH: string = "data/Words/Programming";
-    private MAX_ITERATIONS: number = 20; 
 
     public searchWord(searchPhrase: string, pageDB: PageDB) {
         const pageDBIncludingWord: PageDB = pageDB.getPagesWithWord(searchPhrase);
@@ -54,16 +49,13 @@ export default class SearchService {
         normalize(scores.location, true);
 
         for (let i = 0; i < pageDB.pages.length; i++) {
-            /* const p: Page = pageDB.getPageAtIndex(i); */
             const p: Page = pageDB.pages[i];
             if (scores.content[i] > 0) {
-                /* const score = (((1 * scores.content[i]) + 0.8) * scores.location[i]) */
                 const contentScore = 1 * scores.content[i];
                 const locScore = 0.8 * scores.location[i];
                 const pageRank = 0.5 * p.pageRank;
 
                 const score = contentScore + locScore + pageRank
-                /* const score = (this.getFrequencyScore(p, searchPhrase, pageDB) + (0.8 * this.getDocumentLocation(p, searchPhrase, pageDB)) + (0.5 * p.pageRank)); */
                 result.push(new PageScore(p, score, contentScore, locScore, pageRank));
             }
         }
