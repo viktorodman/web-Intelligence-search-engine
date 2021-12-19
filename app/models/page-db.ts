@@ -2,93 +2,91 @@ import Page from "./page";
 
 export default class PageDB {
     private _wordTold: Map<string, number> = new Map<string, number>();
-    private _pages: Set<Page> = new Set<Page>();
+    private _pages: Page[] = [];
 
-    public set pages(newPages: Set<Page>) {
+    constructor(wordToId = new Map<string, number>()) {
+        this._wordTold = wordToId;
+    }
+
+
+    public set pages(newPages: Page[]) {
         this._pages = newPages;
     }
-    
-    /* public getPagesNamesWithWord(word: string): string[] {
-        const pagesWithWord: string[] = [];
-        
-        if (this._wordTold.has(word)) {
-            const wordIndex = this.getIdForWord(word);
-            
-            for (const page of this._pages) {
-                if (page.containsWord(wordIndex)) {
-                    pagesWithWord.push(page.url);
-                }
-            }
-        }
-        
-        return pagesWithWord;
-    } */
 
-    public getPagesWithWord(phrase: string): Set<Page> {
-        const pagesIncludingWord:Set<Page> =  new Set<Page>();
+    public get pages() {
+        return this._pages;
+    }
+
+    public getPagesWithWord(phrase: string): PageDB {
+        const pagesIncludingWord: Page[] = []
         const wordsInPhrase: string[] = phrase.split(" "); 
         let allWordsExists: boolean = true;
 
+        const possibleWords: string[] = [];
+
         for (const word of wordsInPhrase) {
-            if (!this._wordTold.has(word)) allWordsExists = false;
+            const wordToLowerCase = word.toLowerCase();
+            if (this._wordTold.has(wordToLowerCase)) possibleWords.push(wordToLowerCase);
         }
 
-        
-        if (allWordsExists) {
+
+        if (possibleWords.length > 0) {
             for (let page of this._pages) {
-                let includesAllWords = true;
-                for (const word of wordsInPhrase) {
-                        const wordIndex = this.getIdForWord(word);
-                        if (!page.containsWord(wordIndex)) includesAllWords = false;
+                let includesAllWords = false;
+                for (const word of possibleWords) {
+                    const wordIndex = this.getIdForWord(word);
+                    if (page.containsWord(wordIndex)) includesAllWords = true;
 
-                        if (includesAllWords) pagesIncludingWord.add(page); 
-                    }
+                    /* if (includesAllWords) pagesIncludingWord.add(page);  */
                 }
+                if (includesAllWords) {
+                    pagesIncludingWord.push(page);
+                }
+            }
         }
+
+        const newPageDB = new PageDB(this._wordTold);
+        newPageDB.pages = pagesIncludingWord;
        
-
-        
-
-        return pagesIncludingWord
+        return newPageDB
     }
 
     public includesWord(word: string): boolean {
-        return (this._wordTold.has(word)); 
+        const wordToLowerCase = word.toLowerCase();
+        return (this._wordTold.has(wordToLowerCase)); 
     }
 
-    public addPage(page: Page, wordsFromFile: string[]): void {
+    public addPage(page: Page, wordsFromFile: string[], links: string[]): void {
         for (const word of wordsFromFile) {
             const wordID = this.getIdForWord(word);
             page.addWord(wordID)
         }
 
-        this._pages.add(page);
+        for (const link of links) {
+            page.addLink(link);
+        }
+
+        this._pages.push(page);
     }
     
     public getIdForWord(word: string): number {
-        if (this._wordTold.has(word)) {
-            return this._wordTold.get(word) || -1;
+        const wordToLowerCase = word.toLowerCase();
+        if (this._wordTold.has(wordToLowerCase)) {
+            return this._wordTold.get(wordToLowerCase) || -1;
         } else {
             const id = this._wordTold.size;
-            this._wordTold.set(word.toLowerCase(), id);
+            this._wordTold.set(wordToLowerCase, id);
             return id;
         }
     }
 
+
     public noPages(): number {
-        return this._pages.size;
+        return this._pages.length;
     }
 
     public getNumberOfWords(): number {
         return this._wordTold.size
     }
 
-    public getPageAtIndex(index: number): Page {
-        if (index >= this._pages.size) {
-            throw new Error("Index is out of bound");
-        }
-
-        
-        return Array.from(this._pages)[index];
-    }
 }

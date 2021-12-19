@@ -11,8 +11,10 @@ const Home: NextPage = () => {
   const [searchResult, setSearchResult] = useState<SearchResult>();
 
   const fetchSearchResult = async (searchPhrase: String) => {
+
+
     const response = await fetch(
-      `http://localhost:3000/api/pagedb/search?phrase=${searchPhrase}`
+      `http://localhost:3000/api/pagedb/search?phrase=${encodeURIComponent(String(searchPhrase))}`
     );
     const result = await response.json();
     console.log(result);

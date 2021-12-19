@@ -8,6 +8,7 @@ type Data = {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
+    console.log(req.query.phrase)
     const  searchPhrase  = req.query.phrase as string;
     console.log(searchPhrase)
     const searchService: SearchService = new SearchService();

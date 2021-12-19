@@ -7,6 +7,7 @@
     /* background-color: #fcfcfc; */
 }
 .innerWrapper {
+    margin: auto;
     margin-top: 20px;
     width: 70%;
 }

@@ -1,55 +1,70 @@
 import Page from "../models/page";
 import PageDB from "../models/page-db";
+import PageScore from "../models/page-score";
 import Score from "../models/score";
 import { SearchResult } from "../types/search-result";
-import { readFilenamesInDirs, readWordsFromFile } from "../utils/file-reader";
+import { readFilenamesInDirs, readRowsFromFile, readWordsFromFile } from "../utils/file-reader";
 
 export default class SearchService {
+    private DIR_PATH_WORDS: string = "data/Words";
+    private DIR_PATH_LINKS: string = "data/Links";
     private GAMES_DIR_PATH: string = "data/Words/Games";
     private PROGRAMMING_DIR_PATH: string = "data/Words/Programming";
+    private MAX_ITERATIONS: number = 20; 
 
-    public async searchWord(searchPhrase: string):Promise<SearchResult> {
+    public async searchWord(searchPhrase: string):Promise<any> {
         const pageDB: PageDB = await this.createPageDB();
-        const pagesWithWord: Set<Page> = pageDB.getPagesWithWord(searchPhrase);
-
-        console.log(pageDB.getNumberOfWords())
-
-        pageDB.pages = pagesWithWord;
-
-        const result: Score[] = this.query(pageDB, searchPhrase);
+        const pageDBIncludingWord: PageDB = pageDB.getPagesWithWord(searchPhrase);
+        const result: PageScore[] = this.query(pageDBIncludingWord, searchPhrase);
         
 
         return this.createResults(result);
     }
 
-    private createResults(scores: Score[]): SearchResult {
+    private createResults(scores: PageScore[]): SearchResult {
         const searchResults: SearchResult = {
             numOfResults: scores.length,
             queryTime: 0,
-            searchScores: scores.map(s => ({score: s.score, contentScore: s.score, link: s.page?.url || "", locationScore: 0, pageRank: 0})).slice(0, 5)
+            searchScores: scores.map(s => ({ 
+                score: s.score, 
+                content: s.content, 
+                link: `https://en.wikipedia.org${s.page?.url}`, 
+                location: s.location, 
+                pageRank: s.pageRank
+            })).slice(0, 5)
         }
 
         return searchResults
     }
 
     private query(pageDB: PageDB, searchPhrase: string) {
-        const result: Score[] = []
+        const result: PageScore[] = []
+
+
         const scores: Score = new Score();
 
-        for (let i = 0; i < pageDB.noPages(); i++) {
-            const p: Page = pageDB.getPageAtIndex(i);
+
+        for (let i = 0; i < pageDB.pages.length; i++) {
+            const p: Page = pageDB.pages[i];
             scores.content[i] = this.getFrequencyScore(p, searchPhrase, pageDB);
-            scores.location[i] = this.getWordDistance(p, searchPhrase, pageDB);
+            scores.location[i] = this.getDocumentLocation(p, searchPhrase, pageDB);
         }
 
         this.normalize(scores.content, false);
         this.normalize(scores.location, true);
 
-        for (let i = 0; i < pageDB.noPages(); i++) {
-            const p: Page = pageDB.getPageAtIndex(i);
+        for (let i = 0; i < pageDB.pages.length; i++) {
+            /* const p: Page = pageDB.getPageAtIndex(i); */
+            const p: Page = pageDB.pages[i];
             if (scores.content[i] > 0) {
-                const score = ((1 * scores.content[i] + 0.8) + (0.5 * scores.location[i]))
-                result.push(new Score(p, score))
+                /* const score = (((1 * scores.content[i]) + 0.8) * scores.location[i]) */
+                const contentScore = 1 * scores.content[i];
+                const locScore = 0.8 * scores.location[i];
+                const pageRank = 0.5 * p.pageRank;
+
+                const score = contentScore + locScore + pageRank
+                /* const score = (this.getFrequencyScore(p, searchPhrase, pageDB) + (0.8 * this.getDocumentLocation(p, searchPhrase, pageDB)) + (0.5 * p.pageRank)); */
+                result.push(new PageScore(p, score, contentScore, locScore, pageRank));
             }
         }
 
@@ -76,12 +91,48 @@ export default class SearchService {
         }
     }
 
+    private calculatePageRank(pageDB: PageDB) {
+        let ranks: number[] = []
+        for (let i = 0; i < this.MAX_ITERATIONS; i++) {
+            ranks = [];
+
+            for (let j = 0; j < pageDB.pages.length; j++) {
+                ranks.push(this.iteratePR(pageDB.pages[j], pageDB));
+            }
+            
+            for (let k = 0; k < pageDB.pages.length; k++) {
+                pageDB.pages[k].pageRank = ranks[k];
+            }
+        }
+
+        this.normalize(ranks, false);
+
+
+        for (let i = 0; i < pageDB.pages.length; i++) {
+            pageDB.pages[i].pageRank = ranks[i];
+        }
+    }
+
+    private iteratePR(page: Page, pageDB: PageDB) {
+        let pr: number = 0;
+
+
+        for (let i = 0; i < pageDB.pages.length; i++) {
+            const currentPage = pageDB.pages[i];
+            if (currentPage.hasLinkTo(page)) {
+                pr += (currentPage.pageRank / currentPage.getNoLinks());
+            }
+        }
+
+        pr = 0.85 * pr + 0.15;
+        
+        return pr;
+    }
+
 
     private getFrequencyScore(p: Page, searchPhrase: string, pageDB: PageDB): number {
         const qws: string[] = searchPhrase.split(" ");
         let score: number = 0;
-        console.log("HERE")
-        console.log(qws)
         for (const q of qws) {
             if (pageDB.includesWord(q)) {
                 const queryIndex = pageDB.getIdForWord(q);
@@ -109,6 +160,7 @@ export default class SearchService {
 
                     if (word === queryIndex) {
                         found = true;
+                        score += i + 1;
                         break;
                     }
                 }
@@ -130,7 +182,7 @@ export default class SearchService {
             if (loc1 === 100000 || loc2 === 100000) {
                 score += 100000;
             } else {
-                Math.abs((loc1 - loc2));
+                score += Math.abs((loc1 - loc2));
             }
         }
 
@@ -138,16 +190,25 @@ export default class SearchService {
     }
 
     private async createPageDB(): Promise<PageDB> {
-        const filenames = await readFilenamesInDirs([this.GAMES_DIR_PATH, this.PROGRAMMING_DIR_PATH]);
+        const directories = await readFilenamesInDirs([this.GAMES_DIR_PATH, this.PROGRAMMING_DIR_PATH]);
+
         const pageDB: PageDB = new PageDB();
 
-        for (const filename of filenames) {
-            const wordsInPath = filename.split("/");
-            const pageName = wordsInPath[wordsInPath.length -1];
-            const page: Page = new Page(`https://en.wikipedia.org/wiki/${pageName}`);
-            const wordsFromFile = await readWordsFromFile(filename);
-            pageDB.addPage(page, wordsFromFile)
+        for (const directory of directories) {
+            for (const filename of directory.filenames) {
+                const page: Page = new Page(`/wiki/${filename}`);
+                const wordsFromFile = await readWordsFromFile(`${directory.dirPath}/${filename}`);
+                const links = await readRowsFromFile(`${this.DIR_PATH_LINKS}/${directory.dirName}/${filename}`);
+                pageDB.addPage(page, wordsFromFile, links);
+            }
         }
+        
+        let startTime = process.hrtime();
+        this.calculatePageRank(pageDB);
+
+        const test = process.hrtime(startTime)
+
+        console.log(Number((test[0] + (test[1] / 1e9)).toFixed(5)))
     
         return pageDB;
     }

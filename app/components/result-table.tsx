@@ -24,12 +24,12 @@ const ResultTable = ({ searchResult }: ResultTableProps) => {
                 <tr key={index}>
                   <td>
                     <a rel="noreferrer noopener" href={sc.link} target="_blank">
-                      {sc.link}
+                      {decodeURIComponent(sc.link)}
                     </a>
                   </td>
                   <td>{sc.score.toFixed(2)}</td>
-                  <td>{sc.contentScore.toFixed(2)}</td>
-                  <td>{sc.locationScore.toFixed(2)}</td>
+                  <td>{sc.content.toFixed(2)}</td>
+                  <td>{sc.location.toFixed(2)}</td>
                   <td>{sc.pageRank.toFixed(2)}</td>
                 </tr>
               );

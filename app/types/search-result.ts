@@ -1,8 +1,8 @@
 export type SearchScore = {
     link: string;
     score: number;
-    contentScore: number;
-    locationScore: number;
+    content: number;
+    location: number;
     pageRank: number;
 }
 
