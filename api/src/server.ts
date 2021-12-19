@@ -1,17 +1,25 @@
 import express from 'express'
-import DBRouter from './routes/db-router';
+import DBController from './controllers/db-controller';
+import PageDB from './models/page-db';
+import { createDB } from './utils/create-db';
 
 export default class Server {
     private _app: express.Application = express();
-    private dbRouter: DBRouter = new DBRouter();
+    private dbController: DBController = new DBController();
     private _port: string | number;
+    private test = "hello";
+    private db: PageDB = new PageDB();
 
     public constructor(port: string | number) {
         this._port = port;
     }
 
-    public run() {
-        this._app.use('/api/db', this.dbRouter.router)
+    public async run() {
+        this.db = await createDB();
+
+        this._app.use('/api/db', (req, res) => this.dbController.searchDB(req, res, this.db))
+
+
         this.listen()
     }
 
