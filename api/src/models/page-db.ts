@@ -36,8 +36,6 @@ export default class PageDB {
                 for (const word of possibleWords) {
                     const wordIndex = this.getIdForWord(word);
                     if (page.containsWord(wordIndex)) includesAllWords = true;
-
-                    /* if (includesAllWords) pagesIncludingWord.add(page);  */
                 }
                 if (includesAllWords) {
                     pagesIncludingWord.push(page);

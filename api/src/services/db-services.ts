@@ -4,7 +4,6 @@ import PageScore from "../models/page-score";
 import Score from "../models/score";
 import { SearchResult } from "../types/search-result";
 import { normalize } from "../utils/create-db";
-import { readFilenamesInDirs, readRowsFromFile, readWordsFromFile } from "../utils/file-reader";
 
 export default class SearchService {
 
